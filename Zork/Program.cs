@@ -9,9 +9,10 @@ namespace Zork
             Console.WriteLine("Welcome to Zork!");
 
             Commands command = Commands.UNKNOWN;
+            roomIndex = 1;
             while (command != Commands.QUIT)
             {
-                Console.Write("> ");
+                Console.Write(Rooms[roomIndex]+ "\n> ");
                 command = ToCommand(Console.ReadLine().Trim());
 
                 string outputString;
@@ -22,19 +23,18 @@ namespace Zork
                         break;
 
                     case Commands.NORTH:
-                        outputString = "You moved NORTH.";
-                        break;
-
                     case Commands.SOUTH:
-                        outputString = "You moved SOUTH.";
-                        break;
-
-                    case Commands.EAST:
-                        outputString = "You moved EAST.";
-                        break;
-
+                    case Commands.EAST:                        
                     case Commands.WEST:
-                        outputString = "You moved WEST.";
+                        if (Move(command))
+                        {
+                            outputString = $"You moved {command}.";
+                        }
+
+                        else
+                        {
+                            outputString = "This way is shut!";
+                        }
                         break;
 
                     case Commands.QUIT:
@@ -52,6 +52,36 @@ namespace Zork
                 Console.WriteLine(outputString);
             }
         }
+
+        private static int roomIndex;
+
+        private static bool Move(Commands command)
+        {
+            switch (command)
+            {
+                case Commands.EAST:
+                    if (roomIndex < Rooms.Length - 1)
+                    {
+                        roomIndex += 1;
+                        return true;
+                    }
+                    break;
+
+                case Commands.WEST:
+                    if (roomIndex > 0)
+                    {
+                        roomIndex -= 1;
+                        return true;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            return false;
+        }
+
+        private static string[] Rooms = { "Forest", "West of House", "Behind House", "Clearing", "Canyon View" };
 
         private static Commands ToCommand(string commandString) => Enum.TryParse<Commands>(commandString, true, out Commands result) ? result : Commands.UNKNOWN;
     }
