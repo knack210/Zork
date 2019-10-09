@@ -1,4 +1,5 @@
 {
+  "WelcomeMessage":  "Welcome to ZORK.",
   "World": {
     "StartingLocation": "West of House",
     "Rooms": [
@@ -39,9 +40,9 @@
       },
       {
         "Name": "Forest 1",
-		"LookName":  "Forest",
+        "LookName": "Forest",
         "Description": "This is a forest, with trees in all directions around you.",
-        "Neighbors": {          
+        "Neighbors": {
           "South": "Forest 3",
           "East": "West of House"
         }
@@ -58,14 +59,14 @@
         "Name": "Forest 3",
         "Description": "This is a dimly lit forest, with large trees all around. To the east, there appears to be sunlight.",
         "Neighbors": {
-          "North": "South of House",          
+          "North": "South of House",
           "East": "Clearing"
         }
       },
       {
         "Name": "Clearing",
         "Description": "You are in a clearing, with a forest surrounding you on the west and south.",
-        "Neighbors": {          
+        "Neighbors": {
           "West": "Forest 2",
           "South": "Forest 3"
         }

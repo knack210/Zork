@@ -1,60 +1,65 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using System.Text;
 
 namespace Zork
 {
 	public class Game
 	{
+        [JsonIgnore]
+        public static Game Instance { get; private set; }
+
 		public World World { get; set; }
 
 		[JsonIgnore]
 		public Player Player { get; private set; }
 
+        [JsonIgnore]
+        public CommandManager CommandManager { get; }
+
 		[JsonIgnore]
 		public bool IsRunning { get; set; }
-
-		[JsonIgnore]
-		public CommandManager CommandManager { get; }
-
+		
 		public Game(World world, Player player)
 		{
 			World = world;
 			Player = player;
 		}
 
-		public Game()
+        public Game() => CommandManager = new CommandManager();
+
+		public static void Start(string gameFilename)
+        {
+            if(!File.Exists(gameFilename))
+            {
+                throw new FileNotFoundException("Expected file.", gameFilename);
+            }
+
+            while (Instance == null || Instance.mIsRestarting)
+            {
+                Instance = Load(gameFilename);
+                Instance.LoadCommands();
+                Instance.LoadScripts();
+                Instance.DisplayWelcomeMessage();
+                Instance.Run();
+            }
+        }
+
+		private void Run()
 		{
-			Command[] commands =
-			{
-				new Command("LOOK", new string[] { "LOOK", "L" },
-					(game, commandContext) => Console.WriteLine(game.Player.Location.Description)),
-
-				new Command("QUIT", new string[] { "QUIT", "Q" },
-					(game, commandContext) => game.IsRunning = false),
-
-				new Command("NORTH", new string[] { "NORTH", "N" },MovementCommands.North),
-
-				new Command("SOUTH", new string[] { "SOUTH", "S" }, MovementCommands.South),
-
-				new Command("EAST", new string[] { "EAST", "E" }, MovementCommands.East),
-
-				new Command("WEST", new string[] { "WEST", "W" }, MovementCommands.West)
-			};
-			CommandManager = new CommandManager(commands);
-		}
-
-		public void Run()
-		{
-			IsRunning = true;
+			mIsRunning = true;
 			Room previousRoom = null;
-			while (IsRunning)
+			while (mIsRunning)
 			{
 				Console.WriteLine(Player.Location);
 				if (previousRoom != Player.Location)
 				{
-					Console.WriteLine(Player.Location.Description);
+                    CommandManager.PerformCommand(this, "LOOK");
 					previousRoom = Player.Location;
 				}
 
@@ -69,6 +74,15 @@ namespace Zork
 				}
 			}
 		}
+
+        public void Restart()
+        {
+            mIsRunning = false;
+            mIsRestarting = true;
+            Console.Clear();
+        }
+
+        public void Quit() => mIsRunning = false;
 
 		public static Game Load(string filename)
 		{
@@ -90,5 +104,61 @@ namespace Zork
 
 			CommandManager.AddCommands(commandMethods);
 		}
+
+        private void LoadScripts()
+        {
+            foreach (string file in Directory.EnumerateFiles(ScriptDirectory, ScriptFileExtension))
+            {
+                try
+                {
+                    var scriptOptions = ScriptOptions.Default.AddReferences(Assembly.GetExecutingAssembly());
+#if (DEBUG)
+                    scriptOptions = scriptOptions.WithEmitDebugInfromation(true)
+                                    .WithFilePath(new FileInfo(file).FullName)
+                                    .WithFileEncoding(Encoding.UTF8);
+#endif
+                    string script = File.ReadAllText(file);
+                    CSharpScript.RunAsync(script, scriptOptions).Wait();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error compiling script: {file} Error: {ex.Message}");
+                }
+            }
+        }
+
+        public bool ConfirmAction(string prompt)
+        {
+            Console.Write(prompt);
+
+            while (true)
+            {
+                string response = Console.ReadLine().Trim().ToUpper();
+                if (response == "YES" || response == "Y")
+                {
+                    return true;
+                }
+                else if (response == "NO" || response == "N")
+                {
+                    return false;
+                }
+                else
+                {
+                    Console.Write("Please answer yes or no.> ");
+                }
+            }
+        }
+
+        private void DisplayWelcomeMessage() => Console.WriteLine(WelcomeMessage);
+
+        public static readonly Random Random = new Random();
+        private static readonly string ScriptDirectory = "Scripts";
+        private static readonly string ScriptFileExtension = "*.csx";
+
+        [JsonProperty]
+        private string WelcomeMessage = null;
+
+        private bool mIsRunning;
+        private bool mIsRestarting;
 	}       
 }

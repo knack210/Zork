@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Zork
+﻿namespace Zork
 {
 	[CommandClass]
 	public static class RestartCommand
