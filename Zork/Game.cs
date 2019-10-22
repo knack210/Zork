@@ -113,7 +113,7 @@ namespace Zork
                 {
                     var scriptOptions = ScriptOptions.Default.AddReferences(Assembly.GetExecutingAssembly());
 #if (DEBUG)
-                    scriptOptions = scriptOptions.WithEmitDebugInfromation(true)
+                    scriptOptions = scriptOptions.WithEmitDebugInformation(true)
                                     .WithFilePath(new FileInfo(file).FullName)
                                     .WithFileEncoding(Encoding.UTF8);
 #endif
